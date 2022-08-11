@@ -1,0 +1,23 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: microk8s-pv
+  labels:
+    type: local
+spec:
+  storageClassName: microk8s-hostpath
+  capacity:
+    storage: 300Gi
+  local:
+    path: /data/
+  persistentVolumeReclaimPolicy: Retain
+  accessModes:
+    - ReadWriteOnce
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: node.kubernetes.io/microk8s-controlplane
+            operator: In
+            values:
+              - microk8s-controlplane

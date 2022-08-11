@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: folding # Name of the deployment
+  namespace: default # Name of the namespace
+  labels:
+    app: folding # Name of your application
+spec:
+  selector:
+    matchLabels:
+      app: folding # Name of your application
+  replicas: 1 # Number of replicas
+  template:
+    metadata:
+      labels:
+        app: folding # Name of your application
+    spec:
+      containers:
+      # Containers are the individual pieces of your application that you want
+      # to run.
+      - name: folding # Name of the container
+        image: linuxserver/foldingathome # The image you want to run
+        envFrom:
+          - configMapRef:
+              name: folding-env
+        resources:
+          limits:
+            memory: 4Gi
+            cpu: 6.0
+          requests:
+            memory: 512Mi
+            cpu: "1"
+        ports:
+        # Ports are the ports that your application uses.
+        - containerPort: 7396 # The port that your application uses
+        volumeMounts:
+        - name: folding-config
+          mountPath: /config/config.xml
+          subPath: config.xml
+      restartPolicy: Always
+        # VolumeMounts are the volumes that your application uses.
+      #   - mountPath: /var/www/html # The path that your application uses
+      #     name: vol0 # Name of the volume
+      volumes:
+      - name: folding-config
+        configMap:
+          name: folding-config
+      # # Volumes are the persistent storage that your application uses.
+      # - name: vol0 # Name of the volume
+      #   persistentVolumeClaim:
+      #     claimName: pvc0 # Name of the persistent volume claim
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: folding-env
+data:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: America/Toronto
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: folding-config
+data:
+  config.xml: |
+    <config>
+      <!-- Folding Slot Configuration -->
+      <cause v='COVID_19'/>
+
+      <!-- Slot Control -->
+      <power v='FULL'/>
+
+      <!-- User Information -->
+      <passkey v='8d0addcd1f24375a8d0addcd1f24375a'/>
+      <team v='262701'/>
+      <user v='Joe_Loesch'/>
+
+      <!-- Folding Slots -->
+      <slot id='0' type='CPU'>
+        <cpus v='12'/>
+      </slot>
+    </config>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: folding-svc
+  labels:
+    name: folding-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: folding
+  ports:
+      # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
+    - port: 7396
+      targetPort: 7396
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
+      # nodePort: 30007
